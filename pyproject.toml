@@ -1,0 +1,72 @@
+# glow project config
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [
+    "setuptools>=61",
+    "setuptools-scm[toml]>=6.2.3",
+]
+
+[project]
+name = "glow"
+description = "glow: simple powerful testing with linux"
+readme = "README.md"
+keywords = [
+    "test",
+    "linux test",
+]
+license = { text = "MIT" }
+authors = [
+    { name = "aatroxfly@gmail.com" },
+]
+requires-python = ">=3.11"
+# https://pypi.org/classifiers/
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Utilities",
+]
+
+dynamic = [
+    "version",
+]
+
+dependencies = [
+    "pydantic_settings",
+    "pydantic",
+    "pyserial>=3.5",
+    "paramiko",
+    "PyYAML",
+    "eventlet",
+    "pytest>=7.3.1",
+    "allure_pytest>=2.13.4",
+    "pytest_xdist>=3.2.1",
+    "pytest_sugar>=1.0.0",
+    "dill>=0.3.9",
+    "pytest_assume>=2.4.3",
+]
+urls.Changelog = "https://gerrit.zte.com.cn/#/admin/projects/NOS/glow-recipes"
+urls.Source = "https://github.com/pytest-dev/pytest"
+scripts."py.glow" = "glow:console_main"
+scripts.glow = "glow:console_main"
+
+[project.optional-dependencies]
+dev = ["black"]
+doc = ["sphinx-autobuild", "sphinx", "sphinx_removed_in", "sphinxcontrib_trio", "sphinx_issues", "sphinxcontrib_towncrier"]
+
+[tool.setuptools_scm]
+write_to = "src/_glow/_version.py"
+
+[tool.black]
+target-version = ['py311']
+
+
+# glow project config end
