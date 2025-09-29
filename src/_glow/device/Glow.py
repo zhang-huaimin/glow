@@ -1,4 +1,4 @@
-from glow import Dev
+from _glow.device.dev import Dev
 
 
 class Glow(Dev):

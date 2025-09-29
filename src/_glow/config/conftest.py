@@ -1,6 +1,7 @@
 import os
 import pytest
 from pathlib import Path
+from glow import Dev
 from glow import DevPool
 
 WORKSPACE = Path(os.getcwd()).absolute()
@@ -26,20 +27,17 @@ def pytest_addoption(parser):
 # session
 @pytest.fixture(scope="session")
 def dev_pool(request):
-    pool = None
-
     pyt_config = request.config.option.__dict__
     pyt_config["WORKSPACE"] = WORKSPACE
     pool = DevPool(pyt_config)
 
     yield pool
-    # TODO: Add session close code
 
 
 # class
 @pytest.fixture(scope="class", autouse=True)
 def dev(request, dev_pool):
-    device = dev_pool.get()
+    device: Dev = dev_pool.get()
     device.bind_cls(request.node)
 
     yield device
@@ -51,7 +49,7 @@ def dev(request, dev_pool):
 # function
 @pytest.fixture(scope="function", autouse=True)
 def bind_func(request):
-    device = request.cls.dev
+    device: Dev = request.cls.dev
     device.bind_func(request.node)
 
     yield

@@ -3,9 +3,9 @@ from queue import Queue
 from pathlib import Path
 from types import ModuleType
 
-from .conf import load_config
-from .Glow import Glow
-from .dev import Dev
+from _glow.config.config import load_config
+from _glow.device.Glow import Glow
+from _glow.device.dev import Dev
 
 
 def load_module_from_path(module_name: str, file_path: Path) -> ModuleType:
@@ -54,6 +54,14 @@ class DevPool:
         if dev_type_file.exists():
             dev_module = load_module_from_path(dev_type, dev_type_file)
             dev_cls = getattr(dev_module, dev_type)
+            if not dev_cls:
+                raise ModuleNotFoundError(
+                    f"Can't find Dev Class: {dev_type} in module: {dev_module.__path__}"
+                )
+            if not issubclass(dev_cls, Dev):
+                raise ValueError(
+                    f"Class {dev_type} in module: {dev_module.__path__} must be subclass of Dev."
+                )
         else:
             dev_cls = Glow
 
