@@ -1,15 +1,18 @@
-from abc import ABC, abstractmethod
-import re
-from typing import Tuple
+from __future__ import annotations
 
+import re
 import pytest
-from _glow.config.config import ConnectConfig
 from time import sleep
+from typing import Tuple
+from abc import ABC, abstractmethod
+
+from _glow.config.config import ConnectConfig, ShellConfig
 
 
 class Connect(ABC):
     MIN_WAIT_TIME = 0.1
     buf = b""
+    shell = None
 
     def __init__(self, config: ConnectConfig):
         self.config = config
@@ -39,20 +42,29 @@ class Connect(ABC):
         """recv bytes from dev. And please add it into self.buf!"""
         pass
 
-    def send(self, cmd: str):
+    def __adapt_cmd(self, cmd: str) -> str:
+        adapt_cmd = f"; echo GlowRes:{self.shell.exit_flag}"
+        if re.search(r"[\r\n]\Z", cmd):
+            return re.sub(r"([\r\n]+)\Z", rf"{adapt_cmd}\1", cmd)
+        else:
+            return cmd + adapt_cmd
+
+    def send(self, cmd: str, adaptive: bool = False) -> str:
         """Send ``cmd`` to dev. If want to add **newline** at cmd's tail, should replace it with ``Connect.br()``
 
         :param cmd: cmd sended to dev.
         """
+        cmd = self.__adapt_cmd(cmd) if adaptive else cmd
         self._send(cmd)
+        return cmd
 
-    def recv(self, t: float = 0.1) -> str:
-        """Recv ``t`` secs data from dev.
+    def recv(self, time: float = 0.1) -> str:
+        """Recv ``time`` secs data from dev.
 
-        :param t: secs.
+        :param time: secs.
         """
         _data = b""
-        sleep(t)
+        sleep(time)
         self._recv()
 
         index = self.buf.rfind(b"\n")
@@ -67,31 +79,31 @@ class Connect(ABC):
 
         return data
 
-    def br(self, cmd: str = ""):
+    def br(self, cmd: str = "", adaptive: bool = False) -> str:
         """Send ``cmd`` with **newline** at tail to dev.
 
         :param cmd: cmd sended to dev.
         """
-        self.send(f"{cmd}\n")
+        return self.send(f"{cmd}\n", adaptive)
 
     def wait(
         self,
-        hope: str,
-        t: float = 5.0,
+        expect: str,
+        timeout: float = 5.0,
         err: str = "",
         soft: bool = False,
-        fail: str = "",
+        unexpect: str = "",
     ) -> Tuple[bool, str]:
         """See ``Connect.ask()`` for details. The difference between them is that ``wait`` does not send cmd."""
 
-        timeout = t
+        timeout = timeout
         data = ""
         stat = False
         is_timeout = False
 
         if timeout < self.MIN_WAIT_TIME:
             raise ValueError(
-                f"Argument t which is {t} should > {self.BASE_TIME} seconds."
+                f"Argument timeoutt which is {timeout} should > {self.BASE_TIME} seconds."
             )
 
         max_times = int(timeout * (1 / self.MIN_WAIT_TIME))
@@ -102,9 +114,9 @@ class Connect(ABC):
             is_fail = False
 
             data += self.recv(self.MIN_WAIT_TIME)
-            if re.search(hope, data):
+            if re.search(expect, data):
                 is_pass = True
-            if fail != "" and re.search(fail, data):
+            if unexpect != "" and re.search(unexpect, data):
                 is_fail = True
 
             stat = True if not is_fail and is_pass else False
@@ -131,17 +143,18 @@ class Connect(ABC):
     def ask(
         self,
         cmd: str,
-        hope: str = "",
-        t: float = 5.0,
-        err: str = "",
+        expect: str = None,
+        timeout: float = 5.0,
+        err: str = None,
         soft: bool = False,
-        fail: str = "",
+        unexpect: str = None,
+        adaptive: bool = False,
     ) -> Tuple[bool, str]:
         """
-        let `dev` exec ``cmd``, expect get ``hope`` in ``t`` secs.
+        let `dev` exec ``cmd``, expect get ``expect`` in ``timeout`` secs.
 
-        1. *pass* test step if get ``hope``.
-        2. *fail* test case if not get ``hope``, or get ``fail``.
+        1. *pass* test step if get ``expect``.
+        2. *unexpect* test case if not get ``expect``, or get ``unexpect``.
 
         .. code-block:: python
             :caption: example
@@ -149,41 +162,40 @@ class Connect(ABC):
 
             stat, data = self.dev.con.ask(
                 cmd='ls; echo res:$?',
-                hope='res:0',
-                t=5,
+                expect='res:0',
+                timeout=5,
                 err="ls failed",
                 soft=False,
-                fail="res:[1-9]\\d*",
+                unexpect="res:[1-9]\\d*",
             )
 
             assert stat == True
             assert 'res:0' in data
 
         :param cmd: cmd sended to dev.
-        :param hope: *pass* test step if get ``hope`` limit in ``t`` secs.
-        :param t: timeout (unit: sec). *fail* test case if over.
-        :param err: print it if *fail*.
+        :param expect: *pass* test step if get ``expect`` limit in ``timeout`` secs.
+        :param timeout: timeout (unit: sec). *unexpect* test case if over.
+        :param err: print it if *unexpect*.
         :param soft: *pass* test step whatever.
-        :param fail: *fail* test case if get ``fail``.
+        :param unexpect: *unexpect* test case if get ``unexpect``.
 
         :returns: A tuple containing a bool of the cmd exec stat,
             and a str of cmd exec data.
 
         """
 
-        # TODO: 根据目标操作系统类型设置hope默认值
-        if not hope:
-            hope = "res:0"
+        if not expect:
+            expect = "GlowRes:0"
 
-        if hope == "res:0" and not fail:
-            fail = "res:[1-9]\\d*"
+        if expect == "GlowRes:0" and not unexpect:
+            unexpect = "GlowRes:[1-9]\\d*"
         pass
 
+        may_adaptive_cmd = self.br(cmd, adaptive)
+
         if not err:
-            err = f"Exec '{cmd}' at {self.dev.type}:{self.dev.name} failed, no hope: '{hope}' match or fail: '{fail}' match."
+            err = f"Exec '{may_adaptive_cmd}' at {self.dev.type}:{self.dev.name} failed, no expect: '{expect}' match or unexpect: '{unexpect}' match."
 
-        self.br(cmd)
-
-        stat, data = self.wait(hope, t, err, soft, fail)
+        stat, data = self.wait(expect, timeout, err, soft, unexpect)
 
         return stat, data

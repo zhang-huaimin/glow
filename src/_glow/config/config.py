@@ -2,11 +2,14 @@ import tomllib
 from pathlib import Path
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import BaseSettings
-from typing import Optional, Self, Union, Literal
+from typing import Optional, Self, TypeAlias, Union, Literal
+
+ShellType: TypeAlias = Literal["bash", "zsh", "fish", "sh"]
 
 
 class SshConfig(BaseModel):
     protocol: Literal["ssh"]
+    shell: ShellType
     port: int = 22
     # set default by DevConfig
     hostname: Optional[str] = None
@@ -21,29 +24,35 @@ class SshConfig(BaseModel):
 
 class SerialConfig(BaseModel):
     protocol: Literal["serial"]
+    shell: ShellType
     port: str
     baudrate: int = 115200
 
 
 class BashConfig(BaseModel):
     protocol: Literal["bash"]
+    shell: str = "bash"
 
 
 class ZshConfig(BaseModel):
     protocol: Literal["zsh"]
+    shell: str = "zsh"
 
 
 class FishConfig(BaseModel):
     protocol: Literal["fish"]
+    shell: str = "fish"
 
 
 class ShConfig(BaseModel):
     protocol: Literal["sh"]
+    shell: str = "sh"
 
 
 ConnectConfig = Union[
     SshConfig, SerialConfig, BashConfig, ZshConfig, FishConfig, ShConfig
 ]
+ShellConfig = Union[BashConfig, ZshConfig, FishConfig, ShConfig]
 
 
 class DevConfig(BaseModel):
