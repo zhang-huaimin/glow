@@ -3,6 +3,7 @@ import pytest
 from pathlib import Path
 from glow import Dev
 from glow import DevPool
+import logging
 
 WORKSPACE = Path(os.getcwd()).absolute()
 
@@ -21,6 +22,21 @@ def pytest_addoption(parser):
         type=Path,
         default=WORKSPACE.joinpath("conf"),
         help="Dev Configs Dir",
+    )
+
+    parser.addoption(
+        f"--log_dir",
+        action="store",
+        type=Path,
+        default=WORKSPACE.joinpath("log"),
+        help="Log Dir",
+    )
+
+    parser.addoption(
+        f"--log_level",
+        action="store",
+        default="DEBUG",
+        help="Logging level",
     )
 
 

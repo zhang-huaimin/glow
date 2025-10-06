@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 import pytest
 from time import sleep
@@ -20,6 +21,10 @@ class Connect(ABC):
     @property
     def protocol(self) -> str:
         return self.config.protocol
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self.dev.logger
 
     @abstractmethod
     def close(self):
@@ -76,6 +81,8 @@ class Connect(ABC):
             _data, self.buf = self.buf[: index + 1], self.buf[index + 1 :]
 
         data = _data.decode("utf-8")
+
+        self.logger.debug(data)
 
         return data
 
@@ -134,8 +141,7 @@ class Connect(ABC):
         if not stat and err:
             # TODO: Log
             if not soft:
-                print(err)
-                print(data)
+                self.logger.error(err)
                 pytest.fail(err)
 
         return stat, data
