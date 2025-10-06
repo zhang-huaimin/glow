@@ -53,18 +53,17 @@ class Dev:
 
         self.module_node = self.cls_node.parent
 
-
         logger = logging.getLogger(
-            f'{self.cls_node.nodeid}-{self.name}::{self.con.protocol}'
+            f"{self.cls_node.nodeid}-{self.name}::{self.con.protocol}"
         )
         self.bind_logger(logger)
         self.cls.logger = self.logger
-        self.cls.logger.info(f'***Test Class Start***: {self.cls.__name__}')
+        self.cls.logger.info(f"***Test Class Start***: {self.cls.__name__}")
 
         self.prepare_test()
 
     def unbind_cls(self):
-        self.cls.logger.info(f'***Test Class End***: {self.cls.__name__}')
+        self.cls.logger.info(f"***Test Class End***: {self.cls.__name__}")
         self.logger = None
         self.cls_node = None
         self.cls = None
@@ -74,14 +73,14 @@ class Dev:
         self.func_node = func_node
         self.func = func_node.function
         logger = logging.getLogger(
-            f'{self.func_node.nodeid}-{self.name}::{self.con.protocol}'
+            f"{self.func_node.nodeid}-{self.name}::{self.con.protocol}"
         )
         self.bind_logger(logger)
         self.func.logger = self.logger
-        self.func.logger.info(f'***Test Func Start***: {self.func_node.name}')
+        self.func.logger.info(f"***Test Func Start***: {self.func_node.name}")
 
     def unbind_func(self):
-        self.func.logger.info(f'***Test Func End***: {self.func_node.name}')
+        self.func.logger.info(f"***Test Func End***: {self.func_node.name}")
         self.func.logger = None
         self.func_node = None
         self.func = None
@@ -92,7 +91,9 @@ class Dev:
                 try:
                     self.con.close()
                 except Exception as e:
-                    self.logger.warning(f'Close connect {self.con.protocol} failed, cause of {e}.')
+                    self.logger.warning(
+                        f"Close connect {self.con.protocol} failed, cause of {e}."
+                    )
                     del con
         con = create_connect(self.config.connect)
         con.dev = self

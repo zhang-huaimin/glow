@@ -82,6 +82,7 @@ class Connect(ABC):
 
         data = _data.decode("utf-8")
 
+        # FIXME：，如果cmd有换行符，则此方法会返回多行数据
         self.logger.debug(data)
 
         return data
@@ -95,15 +96,16 @@ class Connect(ABC):
 
     def wait(
         self,
-        expect: str,
+        expect: str = None,
         timeout: float = 5.0,
-        err: str = "",
+        err: str = None,
         soft: bool = False,
-        unexpect: str = "",
+        unexpect: str = None,
     ) -> Tuple[bool, str]:
         """See ``Connect.ask()`` for details. The difference between them is that ``wait`` does not send cmd."""
+        if not expect and not unexpect:
+            raise ValueError("Expect or unexpect should not be None at the same time.")
 
-        timeout = timeout
         data = ""
         stat = False
         is_timeout = False
@@ -121,12 +123,14 @@ class Connect(ABC):
             is_fail = False
 
             data += self.recv(self.MIN_WAIT_TIME)
-            if re.search(expect, data):
-                is_pass = True
-            if unexpect != "" and re.search(unexpect, data):
+
+            if unexpect and re.search(unexpect, data):
                 is_fail = True
+            if expect and re.search(expect, data):
+                is_pass = True
 
             stat = True if not is_fail and is_pass else False
+            logging.error(f"is_pass: {is_pass}, is_fail: {is_fail}")
 
             if is_pass or is_fail:
                 break
@@ -189,13 +193,11 @@ class Connect(ABC):
             and a str of cmd exec data.
 
         """
-
-        if not expect:
-            expect = "GlowRes:0"
-
-        if expect == "GlowRes:0" and not unexpect:
-            unexpect = "GlowRes:[1-9]\\d*"
-        pass
+        if adaptive:
+            if not expect:
+                expect = "GlowRes:0"
+            if not unexpect:
+                unexpect = "GlowRes:[1-9]\\d*"
 
         may_adaptive_cmd = self.br(cmd, adaptive)
 

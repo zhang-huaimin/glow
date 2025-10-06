@@ -7,4 +7,4 @@ LABEL org.opencontainers.image.description="Glow Test Image - for dev & CI testi
 
 WORKDIR /app/testing
 
-CMD ["glow", "--conf", "glow", "testcases/dev/test_load_dev.py"]
+CMD ["glow", "--conf", "glow", "testcases/"]

@@ -22,7 +22,7 @@ class Shell(Connect):
             self.master, self.slave = pty.openpty()
             os.set_blocking(self.master, False)
             os.set_blocking(self.slave, False)
-            self.shell = subprocess.Popen(
+            self.popen = subprocess.Popen(
                 ["bash", "-c", self.config.protocol],
                 stdin=self.slave,
                 stdout=self.slave,
@@ -33,7 +33,7 @@ class Shell(Connect):
             )
 
     def check(self) -> bool:
-        return self.shell.poll() is None
+        return self.popen.poll() is None
 
     def _recv(self):
         try:
@@ -48,9 +48,9 @@ class Shell(Connect):
         try:
             os.close(self.master)
             os.close(self.slave)
-            self.shell.terminate()
+            self.popen.terminate()
         except Exception:
-            self.shell.kill()
+            self.popen.kill()
 
 
 class Sh(Shell):
