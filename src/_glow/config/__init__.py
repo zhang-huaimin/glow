@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Sequence
 from pytest import ExitCode
 
+from _glow.config.parallel import ParallelServer
+
 _PluggyPlugin = object
 
 
@@ -31,20 +33,50 @@ def main(
     if not os.path.isdir(workspace):
         return ExitCode.USAGE_ERROR
 
+    id = ""
     try:
+
         pyproject = this_file.joinpath("pyproject.toml")
         shutil.copy(this_file.joinpath("conftest.py"), workspace)
 
-        _args = args if args else sys.argv
-        sys.argv = _args
+        _args = args if args else sys.argv[1:]
+        extra_args = []
+        for i in range(len(_args)):
+            if "--id" == str(_args[i]):
+                id = str(_args[i + 1])
+            if "--conf" == str(_args[i]):
+                dev_nums = len(_args[i + 1].strip().split(","))
 
-        pytest.main()
+        if not id:
+            import uuid
+
+            id = str(uuid.uuid4())
+            extra_args += ["--id", id]
+
+        for i in range(len(_args)):
+            if "--parallel" == str(_args[i]):
+                ParallelServer(workspace.joinpath(f".{id}.db"))._init_db()
+
+                extra_args += [
+                    "--dist",
+                    "loadscope",
+                    "-n",
+                    str(dev_nums),
+                ]
+
+                break
+
+        new_args = _args + extra_args
+
+        pytest.main(new_args)
     except Exception as e:
         logging.error(e)
         return ExitCode.USAGE_ERROR
     finally:
         if workspace.joinpath("conftest.py").exists():
-            os.unlink(workspace.joinpath("conftest.py"))
+            workspace.joinpath("conftest.py").unlink()
+        if workspace.joinpath(f".{id}.db").exists():
+            workspace.joinpath(f".{id}.db").unlink()
 
 
 def console_main() -> int:

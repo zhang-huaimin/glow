@@ -1,0 +1,11 @@
+[dev]
+name = "glow-xdist-2"
+type = "Glow"
+arch = "x86_64"
+hostname = "127.0.0.1"
+user = "codespace"
+password = "Glow@1234@"
+workspace = "/workspaces/glow/selftest/workspace"
+
+[dev.connect]
+protocol = "bash"

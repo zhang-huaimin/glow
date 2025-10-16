@@ -8,7 +8,8 @@ from _pytest.python import Function, Class
 
 
 class Dev:
-    def __init__(self, conf: Path, pyt_config: dict):
+    def __init__(self, id: str, conf: Path, pyt_config: dict):
+        self.id = id
         self.config: DevConfig = load_config(conf).dev
         self.conf = conf
         self.pyt_config = pyt_config
@@ -26,6 +27,10 @@ class Dev:
         self.module = None
         self.func_node: Class = None
         self.func = None
+
+    def reinit(self):
+        cls = self.__class__
+        return cls(self.id, self.conf, self.pyt_config)
 
     @property
     def name(self):

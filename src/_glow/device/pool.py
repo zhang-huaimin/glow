@@ -27,7 +27,9 @@ class DevPool:
         dev_confs = pyt_config["conf"]
 
         registeds = set()
+        id = 0
         for _dev_conf in dev_confs.split(","):
+            id += 1
             dev_conf = self.conf_dir.joinpath(f"{_dev_conf.strip()}.toml")
             if dev_conf in registeds:
                 continue
@@ -36,7 +38,7 @@ class DevPool:
             dev_config = load_config(dev_conf).dev
 
             dev_cls = self.__get_dev_cls(dev_config.type)
-            self.put(dev_cls(dev_conf, pyt_config))
+            self.put(dev_cls(str(id), dev_conf, pyt_config))
 
     def put(self, dev: Dev):
         self.pool.put(dev)
