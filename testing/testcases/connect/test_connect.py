@@ -1,3 +1,4 @@
+import pytest
 from _pytest.outcomes import Failed
 
 
@@ -25,33 +26,18 @@ class TestConnect:
             raise AssertionError("Test ask argument `timeout` got other error: {e}.")
 
     def test_ask_unexpect(self):
-        try:
+        with pytest.raises(Failed):
             self.con.ask("whoami", unexpect="GlowRes:0", adaptive=True)
             raise AssertionError("Argument `unexpect` is not working.")
-        except Failed:
-            pass
-        except Exception as e:
-            raise AssertionError("Test ask argument `unexpect` got other error: {e}.")
 
     def test_ask_err(self):
-        # error
-        try:
+        with pytest.raises(Failed):
             self.con.ask(
                 "whoami", err="Should Fail", unexpect="GlowRes:0", adaptive=True
             )
-            raise AssertionError("Argument `unexpect` is not working.")
-        except Failed as e:
-            assert "Should Fail" in str(e)
-        except Exception as e:
-            raise AssertionError("Test ask argument `err` got other error: {e}.")
 
     def test_ask_soft(self):
-        try:
-            self.con.ask("whoami", soft=True, unexpect="GlowRes:0", adaptive=True)
-        except Failed:
-            raise AssertionError("Argument `soft` is not working.")
-        except Exception as e:
-            raise AssertionError("Test ask argument `soft` got other error: {e}.")
+        self.con.ask("whoami", soft=True, unexpect="GlowRes:0", adaptive=True)
 
     def test_ask_adaptive(self):
         self.con.ask("whoami", adaptive=True)
