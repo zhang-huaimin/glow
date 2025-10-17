@@ -9,7 +9,7 @@ ShellType: TypeAlias = Literal["bash", "zsh", "fish", "sh"]
 
 class SshConfig(BaseModel):
     protocol: Literal["ssh"]
-    shell: ShellType
+    shell: ShellType = "bash"
     port: int = 22
     # set default by DevConfig
     hostname: Optional[str] = None
@@ -19,40 +19,29 @@ class SshConfig(BaseModel):
     no_password: bool = False
     keyfile: Optional[Path] = None
     timeout: float = 10
-    no_password: bool = False
 
 
 class SerialConfig(BaseModel):
     protocol: Literal["serial"]
-    shell: ShellType
+    shell: ShellType = "bash"
     port: str
     baudrate: int = 115200
 
 
-class BashConfig(BaseModel):
-    protocol: Literal["bash"]
-    shell: str = "bash"
+class ShellConfig(BaseModel):
+    protocol: ShellType
+    shell: ShellType = ""  # same as protocol
+
+    @model_validator(mode="after")
+    def ensure_shell_matches(self) -> Self:
+        if not self.shell:
+            self.shell = self.protocol
+        elif self.shell != self.protocol:
+            raise ValueError("shell must be same as protocol")
+        return self
 
 
-class ZshConfig(BaseModel):
-    protocol: Literal["zsh"]
-    shell: str = "zsh"
-
-
-class FishConfig(BaseModel):
-    protocol: Literal["fish"]
-    shell: str = "fish"
-
-
-class ShConfig(BaseModel):
-    protocol: Literal["sh"]
-    shell: str = "sh"
-
-
-ConnectConfig = Union[
-    SshConfig, SerialConfig, BashConfig, ZshConfig, FishConfig, ShConfig
-]
-ShellConfig = Union[BashConfig, ZshConfig, FishConfig, ShConfig]
+ConnectConfig = Union[SshConfig, SerialConfig, ShellConfig]
 
 
 class DevConfig(BaseModel):
